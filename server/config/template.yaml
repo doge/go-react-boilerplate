@@ -1,0 +1,11 @@
+server:
+  host: ""
+  port: ""
+
+database:
+  user: ""
+  pass: ""
+
+  ip: ""
+  port: ""
+  name: ""
