@@ -69,7 +69,7 @@ func (ur userRepository) FindUserByUsername(ctx context.Context, username string
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("[err] finding user: %w", err)
+		return nil, fmt.Errorf("[error] finding user: %w", err)
 	}
 
 	return &user, nil
@@ -83,7 +83,7 @@ func (ur userRepository) FindUserByID(ctx context.Context, id bson.ObjectID) (*m
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("[err] finding user by id: %w", err)
+		return nil, fmt.Errorf("[error] finding user by id: %w", err)
 	}
 
 	return &user, nil

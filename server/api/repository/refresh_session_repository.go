@@ -17,7 +17,6 @@ type RefreshSessionRepository interface {
 	Insert(context.Context, models.RefreshSession) error
 	FindByTokenHash(context.Context, string) (*models.RefreshSession, error)
 	RevokeByTokenHash(context.Context, string) error
-	RevokeAndReplace(context.Context, bson.ObjectID, bson.ObjectID) error
 	RevokeActiveByUserID(context.Context, bson.ObjectID) error
 	RotateSession(context.Context, models.RefreshSession, models.RefreshSession) error
 }
@@ -58,7 +57,7 @@ func (rsr refreshSessionRepository) FindByTokenHash(ctx context.Context, tokenHa
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("[err] finding refresh session: %w", err)
+		return nil, fmt.Errorf("[error] finding refresh session: %w", err)
 	}
 	return &session, nil
 }
@@ -76,24 +75,6 @@ func (rsr refreshSessionRepository) RevokeByTokenHash(ctx context.Context, token
 		return ErrNotFound
 	}
 
-	return nil
-}
-
-func (rsr refreshSessionRepository) RevokeAndReplace(ctx context.Context, oldID, newID bson.ObjectID) error {
-	now := time.Now()
-
-	result, err := rsr.collection.UpdateOne(ctx, bson.M{"_id": oldID}, bson.M{
-		"$set": bson.M{
-			"revoked_at":  now,
-			"replaced_by": newID,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	if result.MatchedCount == 0 {
-		return ErrNotFound
-	}
 	return nil
 }
 

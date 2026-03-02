@@ -15,7 +15,6 @@ database:
   name: ""
 
 auth:
-  jwt_secret: ""
   issuer: "server"
   access_ttl_minutes: 15
   refresh_ttl_days: 30

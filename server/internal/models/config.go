@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"server/internal/envloader"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -28,7 +29,7 @@ type Config struct {
 	} `yaml:"database"`
 
 	Auth struct {
-		JWTSecret         string `yaml:"jwt_secret"`
+		JWTSecret         string
 		Issuer            string `yaml:"issuer"`
 		AccessTTLMinutes  int    `yaml:"access_ttl_minutes"`
 		RefreshTTLDays    int    `yaml:"refresh_ttl_days"`
@@ -57,6 +58,7 @@ func (c Config) AllowedOrigins() []string {
 		return c.Server.CORS.AllowedOrigins
 	}
 
+	log.Println("[config] failed to find AllowedOrigins, setting defaults")
 	return []string{
 		"http://127.0.0.1:3000",
 		"http://localhost:3000",
@@ -81,7 +83,7 @@ func (c Config) IsAllowedOrigin(origin string) bool {
 
 func (c Config) Validate() error {
 	if c.Auth.JWTSecret == "" {
-		return fmt.Errorf("auth.jwt_secret is required")
+		return fmt.Errorf("ENCRYPTION_KEY is required")
 	}
 	if c.Auth.RefreshCookieName == "" {
 		return fmt.Errorf("auth.refresh_cookie_name is required")
@@ -112,36 +114,38 @@ func LoadConfig(configName string) *Config {
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("[config] failed to load config: %v", err.Error())
 	}
 
 	file, err := os.Open(cwd + "/config/" + configName)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("[config] failed to open config: %v", err.Error())
 	}
 	defer file.Close()
 
 	if err := yaml.NewDecoder(file).Decode(&cfg); err != nil {
-		log.Fatal(err)
+		log.Fatalf("[config] failed to decode config: %v", err.Error())
 	}
 
 	applyEnvOverrides(cfg)
 
 	if err := cfg.Validate(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("[config] validation failed: %v", err)
 	}
 
 	return cfg
 }
 
 func applyEnvOverrides(cfg *Config) {
+	envloader.LoadDotEnv()
+
 	if v := strings.TrimSpace(os.Getenv("SERVER_HOST")); v != "" {
 		cfg.Server.Host = v
 	}
 	if v := strings.TrimSpace(os.Getenv("SERVER_PORT")); v != "" {
 		cfg.Server.Port = v
 	}
-	if v := strings.TrimSpace(os.Getenv("JWT_SECRET")); v != "" {
+	if v := strings.TrimSpace(os.Getenv("ENCRYPTION_KEY")); v != "" {
 		cfg.Auth.JWTSecret = v
 	}
 	if v := strings.TrimSpace(os.Getenv("JWT_ISSUER")); v != "" {

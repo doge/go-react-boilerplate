@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"server/api/controllers"
 	"server/api/repository"
@@ -38,11 +39,13 @@ func SetupRoutes(db *mongo.Database, crypto *security.AESGCM, config *models.Con
 func (r routes) AuthRoutes(router *chi.Mux, db *mongo.Database, crypto *security.AESGCM, config *models.Config) error {
 	accessTTL := time.Duration(config.Auth.AccessTTLMinutes) * time.Minute
 	if accessTTL <= 0 {
+		log.Println("[config] failed to find AccessTTLMinutes, setting to 15 minutes")
 		accessTTL = 15 * time.Minute
 	}
 
 	refreshTTL := time.Duration(config.Auth.RefreshTTLDays) * 24 * time.Hour
 	if refreshTTL <= 0 {
+		log.Println("[config] failed to find RefreshTTLDays, setting to 30 days")
 		refreshTTL = 30 * 24 * time.Hour
 	}
 
