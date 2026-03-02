@@ -9,9 +9,8 @@ import (
 )
 
 func EncryptionKey() []byte {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal("error loading env file")
-	}
+	// Optional for local development; production should inject env directly.
+	_ = godotenv.Load(".env")
 
 	keyBase64 := os.Getenv("ENCRYPTION_KEY")
 	if keyBase64 == "" {

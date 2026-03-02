@@ -38,16 +38,18 @@ func main() {
 	}
 
 	db := mClient.Database(config.Database.Name)
-	router := routes.SetupRoutes(db, crypto)
+	router, err := routes.SetupRoutes(db, crypto, config)
+	if err != nil {
+		log.Printf("[server] failed to setup routes: %v", err)
+		os.Exit(1)
+	}
 
 	// Initialize the server
 	srv := &http.Server{
 
 		// CORS...
 		Handler: handlers.CORS(
-			handlers.AllowedOrigins([]string{
-				"http://127.0.0.1:3000",
-			}),
+			handlers.AllowedOrigins(config.AllowedOrigins()),
 			handlers.AllowedMethods([]string{
 				"GET", "POST", "HEAD", "OPTIONS", "PUT",
 			}),
@@ -56,11 +58,12 @@ func main() {
 			}),
 			handlers.AllowCredentials(),
 		)(router),
-		Addr: "0.0.0.0:8000", // Server URL
+		Addr: config.Address(),
 
 		// Enforce timeouts for server
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	stop := make(chan os.Signal, 1)
@@ -79,7 +82,7 @@ func main() {
 		}
 	}()
 
-	log.Printf("[server] started at 127.0.0.1:8000")
+	log.Printf("[server] started at %s", config.Address())
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("[server] [err]: %v", err)
 	}
